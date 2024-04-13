@@ -2,6 +2,7 @@ import tkinter as tk
 from tkinter import messagebox
 from PIL import Image, ImageTk
 import pygame
+import time
 
 
 class MatryoshkaClicker:
@@ -12,12 +13,16 @@ class MatryoshkaClicker:
         self.matryoshka_count = 0
         self.max_matryoshka_count = 225  # Максимальна кількість Денів
         self.game_over = False
+        self.start_time = time.time()
+        self.time_limit = 40  # час для гри
 
         # Створюємо Label для відображення кількості кліків
         self.label = tk.Label(master, text="")
         self.label.pack()
 
-        self.update_label()
+        # Лейбл для відображення таймера
+        self.timer_label = tk.Label(master, text="")
+        self.timer_label.pack()
 
         self.matryoshka_images = [
             Image.open(f"photo/matryoshka{i}.png") for i in range(1, 10)
@@ -27,6 +32,18 @@ class MatryoshkaClicker:
         self.click_button = tk.Button(master, image=self.matryoshka_photos[0], command=self.click_matryoshka)
         self.click_button.pack()
 
+        # Лейбл для переможної картинки
+        self.win_image = Image.open("photo/Win_den.png")
+        self.win_photo = ImageTk.PhotoImage(self.win_image)
+        self.win_label = tk.Label(master, image=self.win_photo)
+
+        # Лейбл для картинки поразки
+        self.lose_image = Image.open("photo/Lose_den.jpg")
+        self.lose_photo = ImageTk.PhotoImage(self.lose_image)
+        self.lose_label = tk.Label(master, image=self.lose_photo)
+
+        self.update_label()
+
         # Ініціалізуємо звуки
         pygame.mixer.init()
         self.hit_sound = pygame.mixer.Sound("sound/hit_sound.wav")
@@ -34,8 +51,14 @@ class MatryoshkaClicker:
         self.angry = pygame.mixer.Sound("sound/angry.wav")
         self.opa = pygame.mixer.Sound("sound/opa.wav")
 
-        # Кнопка для початку гри
-        self.restart_button = tk.Button(self.master, text="Почати знову", command=self.restart_game)
+        # Кнопка для рестарту гри
+        self.restart_button_image = Image.open("photo/res_but.png")  # Завантажуємо зображення кнопки рестарту
+        self.restart_button_photo = ImageTk.PhotoImage(self.restart_button_image)  # Створюємо фото зображення
+        self.restart_button = tk.Button(self.master, image=self.restart_button_photo, command=self.restart_game,
+                                        bd=0)  # Створюємо кнопку з фото
+
+        # Початок відліку часу
+        self.timer()
 
     def click_matryoshka(self):
         if not self.game_over:
@@ -67,16 +90,32 @@ class MatryoshkaClicker:
         # Відтворюємо звук образи
         self.play_angry()
 
+        # Показуємо переможну картинку
+        self.win_label.pack()
+
+        # Зупиняємо таймер
+        self.master.after_cancel(self.timer_id)
+
     def restart_game(self):
         # Скидаємо стан гри, оновлюємо відображення та показуємо кнопку для кліку
         self.matryoshka_count = 0
         self.game_over = False
+        self.start_time = time.time()  # Скидаємо лічильник часу
         self.update_label()
+        self.win_label.pack_forget()  # Приховуємо переможну картинку
+        self.lose_label.pack_forget()  # Приховуємо картинку поразки
         self.restart_button.pack_forget()
         self.click_button.pack()
 
+        # Початок відліку часу
+        self.timer()
+
     def update_label(self):
         self.label.config(text=f"Ви в'єбали {self.matryoshka_count} разів!")
+
+    def update_timer_label(self):
+        time_left = max(0, self.time_limit - int(time.time() - self.start_time))
+        self.timer_label.config(text=f"Час: {time_left} сек")
 
     def play_hit_sound(self):
         self.hit_sound.play()
@@ -89,6 +128,37 @@ class MatryoshkaClicker:
 
     def play_opa(self):
         self.opa.play()
+
+    def timer(self):
+        # Перевірка, чи гра не закінчилася
+        if not self.game_over:
+            self.update_timer_label()
+            # Перевірка, чи час не вичерпано
+            if time.time() - self.start_time >= self.time_limit:
+                self.lose_game()
+        else:
+            self.update_timer_label()
+
+        # Продовження відліку часу
+        self.timer_id = self.master.after(1000, self.timer)
+
+    def lose_game(self):
+        self.game_over = True
+        # Видаляємо кнопку для кліку та показуємо кнопку "Почати знову"
+        self.click_button.pack_forget()
+        self.restart_button.pack()
+
+        # Показуємо повідомлення про поразку
+        messagebox.showinfo("Піздєц!", "Ви тепер раб Дена!")
+
+        # Відтворюємо звук образи
+        self.play_opa()
+
+        # Показуємо картинку поразки
+        self.lose_label.pack()
+
+        # Зупиняємо таймер
+        self.master.after_cancel(self.timer_id)
 
 
 def main():
