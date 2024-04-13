@@ -8,7 +8,7 @@ class MatryoshkaClicker:
     def __init__(self, master):
         self.master = master
         self.master.title("Розколи Дена!")
-
+        self.win_photo = None
         self.matryoshka_count = 0
         self.max_matryoshka_count = 225  # Максимальна кількість Денів
         self.game_over = False
@@ -52,20 +52,27 @@ class MatryoshkaClicker:
         self.click_button.image = new_image
         self.play_break_sound()  # Відтворення звуку розколу
 
-    def end_game(self):
+       def end_game(self):
         self.game_over = True
         self.play_opa()
         messagebox.showinfo("Піздєц!", "Ви розкололи Дена!")
-        # "Ви перемогли!"
-        win_photo = Image.open("photo/win_image.png")
+
+        # Видаляємо кнопку з попереднім зображенням матрьошки, якщо вона існує
+        if hasattr(self, 'click_button'):
+            self.click_button.pack_forget()
+
+        # Відображаємо зображення перемоги
+        win_photo = Image.open("photo/Win_den.png")
         win_photo = ImageTk.PhotoImage(win_photo)
+
         win_label = tk.Label(self.master, image=win_photo)
         win_label.image = win_photo
-        self.play_angry()
         win_label.pack()
+
         # Кнопка для закриття вікна
         close_button = tk.Button(self.master, text="Закрити", command=self.master.destroy)
         close_button.pack()
+
 
     def update_label(self):
         self.label.config(text=f"Ви в'єбали {self.matryoshka_count} разів!")
