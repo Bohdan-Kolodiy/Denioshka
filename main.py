@@ -8,10 +8,16 @@ class MatryoshkaClicker:
     def __init__(self, master):
         self.master = master
         self.master.title("Розколи Дена!")
-        self.win_photo = None
+
         self.matryoshka_count = 0
         self.max_matryoshka_count = 225  # Максимальна кількість Денів
         self.game_over = False
+
+        # Створюємо Label для відображення кількості кліків
+        self.label = tk.Label(master, text="")
+        self.label.pack()
+
+        self.update_label()
 
         self.matryoshka_images = [
             Image.open(f"photo/matryoshka{i}.png") for i in range(1, 10)
@@ -21,18 +27,15 @@ class MatryoshkaClicker:
         self.click_button = tk.Button(master, image=self.matryoshka_photos[0], command=self.click_matryoshka)
         self.click_button.pack()
 
-        # Створюємо Label для відображення кількості кліків
-        self.label = tk.Label(master, text="")
-        self.label.pack()
-
-        self.update_label()
-
         # Ініціалізуємо звуки
         pygame.mixer.init()
         self.hit_sound = pygame.mixer.Sound("sound/hit_sound.wav")
         self.break_sound = pygame.mixer.Sound("sound/break_sound.wav")
         self.angry = pygame.mixer.Sound("sound/angry.wav")
         self.opa = pygame.mixer.Sound("sound/opa.wav")
+
+        # Кнопка для початку гри
+        self.restart_button = tk.Button(self.master, text="Почати знову", command=self.restart_game)
 
     def click_matryoshka(self):
         if not self.game_over:
@@ -52,27 +55,25 @@ class MatryoshkaClicker:
         self.click_button.image = new_image
         self.play_break_sound()  # Відтворення звуку розколу
 
-       def end_game(self):
+    def end_game(self):
         self.game_over = True
-        self.play_opa()
+        # Видаляємо кнопку для кліку та показуємо кнопку "Почати знову"
+        self.click_button.pack_forget()
+        self.restart_button.pack()
+
+        # Показуємо повідомлення про перемогу
         messagebox.showinfo("Піздєц!", "Ви розкололи Дена!")
 
-        # Видаляємо кнопку з попереднім зображенням матрьошки, якщо вона існує
-        if hasattr(self, 'click_button'):
-            self.click_button.pack_forget()
+        # Відтворюємо звук образи
+        self.play_angry()
 
-        # Відображаємо зображення перемоги
-        win_photo = Image.open("photo/Win_den.png")
-        win_photo = ImageTk.PhotoImage(win_photo)
-
-        win_label = tk.Label(self.master, image=win_photo)
-        win_label.image = win_photo
-        win_label.pack()
-
-        # Кнопка для закриття вікна
-        close_button = tk.Button(self.master, text="Закрити", command=self.master.destroy)
-        close_button.pack()
-
+    def restart_game(self):
+        # Скидаємо стан гри, оновлюємо відображення та показуємо кнопку для кліку
+        self.matryoshka_count = 0
+        self.game_over = False
+        self.update_label()
+        self.restart_button.pack_forget()
+        self.click_button.pack()
 
     def update_label(self):
         self.label.config(text=f"Ви в'єбали {self.matryoshka_count} разів!")
